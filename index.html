@@ -18,7 +18,7 @@ h1{font-size:16px;margin:0 auto 0 0;font-weight:800}
 #cv{max-width:100%;max-height:100%;background:#000;border-radius:8px;touch-action:none}
 #empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;pointer-events:none}
 #empty .b{pointer-events:auto}
-#stash{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;overflow:hidden}
+#stash{position:fixed;left:0;bottom:0;width:96px;height:96px;opacity:.02;z-index:-1;pointer-events:none;overflow:hidden}#stash video{width:96px;height:96px}
 #tr{display:flex;align-items:center;gap:8px;padding:6px 10px}
 #tm{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);padding:2px 10px;border-radius:99px;font-size:12px;font-variant-numeric:tabular-nums;pointer-events:none}
 #zoom{flex:1;min-width:60px;accent-color:var(--ac)}
@@ -53,11 +53,12 @@ small{color:var(--mu)}
 #pvw{display:none;position:fixed;inset:0;background:#000;z-index:25;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}#pvw.on{display:flex}
 #pc{flex:1;min-height:0;width:100%;object-fit:contain}
 #pvb{display:flex;align-items:center;gap:10px;padding:10px 12px}#pvb input{flex:1;accent-color:var(--ac)}#pvt{font-size:12px;color:var(--mu);min-width:44px;font-variant-numeric:tabular-nums}
+.hr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--ln);cursor:pointer}.hr.on{color:var(--ac)}input[type=text]{background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:9px;min-width:0}#av{color:var(--mu);font-weight:400;font-size:11px}
 </style>
 </head>
 <body>
 <div id="prog"></div>
-<header><h1>ReelStudio</h1><button class="b ib" id="un" data-ic="undo" aria-label="Undo"></button><button class="b ib" id="re" data-ic="redo" aria-label="Redo"></button><button class="b ib" id="pv" data-ic="preview" aria-label="Full preview"></button><button class="b pri" id="exp">Export</button></header>
+<header><h1>ReelStudio <small id="av"></small></h1><button class="b ib" id="un" data-ic="undo" aria-label="Undo"></button><button class="b ib" id="re" data-ic="redo" aria-label="Redo"></button><button class="b ib" id="pv" data-ic="preview" aria-label="Full preview"></button><button class="b pri" id="exp">Export</button></header>
 <div id="stage"><canvas id="cv" width="720" height="1280"></canvas><span id="tm"></span>
 <div id="empty"><b style="font-size:20px">Add a video to start</b><small>Layers, trims and sound all stay on your phone. No watermark.</small><button class="b pri" data-a="vid">Add video or photo</button></div></div>
 <div id="stash"></div>
@@ -67,25 +68,26 @@ small{color:var(--mu)}
 <div id="tl"><div id="in"></div></div>
 <div id="pp"></div>
 <div id="tb">
-<button class="b" data-a="vid"><span data-ic="video"></span>Video</button><button class="b" data-a="mus"><span data-ic="audio"></span>Audio</button><button class="b" data-a="txt"><span data-ic="text"></span>Text</button><button class="b" data-a="script"><span data-ic="script"></span>Script</button><button class="b" data-a="sfx"><span data-ic="sfx"></span>Effects</button><button class="b" data-a="lay"><span data-ic="layer"></span>Layer</button><button class="b" data-a="split"><span data-ic="split"></span>Split</button><button class="b" data-a="dup"><span data-ic="dup"></span>Copy</button><button class="b" data-a="del"><span data-ic="del"></span>Delete</button>
+<button class="b" data-a="vid"><span data-ic="video"></span>Video</button><button class="b" data-a="mus"><span data-ic="audio"></span>Audio</button><button class="b" data-a="txt"><span data-ic="text"></span>Text</button><button class="b" data-a="script"><span data-ic="script"></span>Script</button><button class="b" data-a="hist"><span data-ic="hist"></span>History</button><button class="b" data-a="sfx"><span data-ic="sfx"></span>Effects</button><button class="b" data-a="lay"><span data-ic="layer"></span>Layer</button><button class="b" data-a="split"><span data-ic="split"></span>Split</button><button class="b" data-a="dup"><span data-ic="dup"></span>Copy</button><button class="b" data-a="del"><span data-ic="del"></span>Delete</button>
 </div>
 <div id="pvw"><canvas id="pc"></canvas><div id="pvb"><button class="b ib" id="pvp" aria-label="Play or pause"></button><input type="range" id="pvs" min="0" max="1" step="0.01" value="0" aria-label="Seek"><span id="pvt"></span><button class="b ib" id="pvx" data-ic="close" aria-label="Close preview"></button></div></div>
 <div id="toast"></div>
 <div id="res"><video id="rv" controls playsinline></video><div class="rw"><button class="b pri" id="save">Save / Share</button><a class="b" id="dl" style="text-decoration:none;color:inherit">Download</a><button class="b" id="cl">Back to editing</button></div><small>On iPhone choose “Save Video” in the share sheet.</small></div>
 
 <script>
-const $=id=>document.getElementById(id),cv=$('cv'),cx=cv.getContext('2d'),inner=$('in'),OFF=52;
+const $=id=>document.getElementById(id),cv=$('cv'),cx=cv.getContext('2d',{alpha:false}),inner=$('in'),OFF=52;
 const SIZES={'9:16':[720,1280],'4:5':[864,1080],'1:1':[1080,1080],'16:9':[1280,720]};
 const SFX={whoosh:'Whoosh',pop:'Pop',ding:'Ding',hit:'Hit',riser:'Riser',click:'Click'};
 const FONTS={'Avenir Next, Arial, sans-serif':'Clean','Georgia, serif':'Serif','Impact, Arial Black, sans-serif':'Impact','Courier New, monospace':'Mono'};
 const P={ratio:'9:16',q:1,look:'none',br:0,zones:'off'};
 let L=[{id:'t1',type:'text',name:'Text',items:[]},{id:'v2',type:'video',name:'Overlay',items:[]},{id:'v1',type:'video',name:'Video',items:[]},{id:'a1',type:'audio',name:'Music',items:[]},{id:'a2',type:'audio',name:'Effects',items:[]}];
 const A={};let T=0,playing=false,t0=0,sel=null,selL='v1',pps=40,uid=1,lastT=0,pmode='props',drag=null,lp=null,ac,master,recDest,rec=null,chunks=[],blob=null,ext='mp4',ph;
-const I={undo:'M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3',redo:'M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3',play:'M7 4l13 8-13 8z',pause:'M7 4h4v16H7zM13 4h4v16h-4z',prev:'M6 5v14M19 5L9 12l10 7z',next:'M18 5v14M5 5l10 7-10 7z',stepL:'M15 5l-7 7 7 7',stepR:'M9 5l7 7-7 7',split:'M9 6a3 3 0 11-6 0 3 3 0 016 0zM9 18a3 3 0 11-6 0 3 3 0 016 0zM20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12',dup:'M9 9h11v11H9zM5 15H4V4h11v1',del:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',text:'M5 6V4h14v2M12 4v16M9 20h6',video:'M4 6h12v12H4zM16 10l5-3v10l-5-3',audio:'M9 18V5l11-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zM20 16a3 3 0 11-6 0 3 3 0 016 0z',sfx:'M13 2L4 14h7l-1 8 9-12h-7z',layer:'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5',preview:'M3 5h18v14H3zM10 9l5 3-5 3z',close:'M6 6l12 12M18 6L6 18',script:'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7'};
+const I={undo:'M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3',redo:'M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3',play:'M7 4l13 8-13 8z',pause:'M7 4h4v16H7zM13 4h4v16h-4z',prev:'M6 5v14M19 5L9 12l10 7z',next:'M18 5v14M5 5l10 7-10 7z',stepL:'M15 5l-7 7 7 7',stepR:'M9 5l7 7-7 7',split:'M9 6a3 3 0 11-6 0 3 3 0 016 0zM9 18a3 3 0 11-6 0 3 3 0 016 0zM20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12',dup:'M9 9h11v11H9zM5 15H4V4h11v1',del:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',text:'M5 6V4h14v2M12 4v16M9 20h6',video:'M4 6h12v12H4zM16 10l5-3v10l-5-3',audio:'M9 18V5l11-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zM20 16a3 3 0 11-6 0 3 3 0 016 0z',sfx:'M13 2L4 14h7l-1 8 9-12h-7z',layer:'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5',preview:'M3 5h18v14H3zM10 9l5 3-5 3z',close:'M6 6l12 12M18 6L6 18',script:'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7',hist:'M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8M3 3v5h5M12 7v5l3 2'};
 const ic=n=>`<svg class="ic" viewBox="0 0 24 24" fill="${n=='play'||n=='pause'?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${I[n]}"/></svg>`;
 let pvOn=false,pvDrag=0;
 const setPl=()=>{const h=ic(playing?'pause':'play');$('pl').innerHTML=h;$('pvp').innerHTML=h};
-let H=[JSON.stringify(L)],hi=0;
+const APP_VERSION='0.6.0';
+let H=[JSON.stringify(L)],hi=0,HM=[{t:Date.now(),label:'Project started'}],VER=[],vc=1;
 const fmt=t=>Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0')+'.'+Math.floor(t%1*10);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const D=it=>it.dur??it.src/it.spd;
@@ -94,7 +96,7 @@ const find=id=>{for(const l of L)for(const it of l.items)if(it.id==id)return[l,i
 const getSel=()=>sel&&find(sel);
 const total=()=>Math.max(1,...L.flatMap(l=>l.items.map(i=>i.start+D(i))));
 const toast=m=>{const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',5000)};
-function commit(){H.length=hi+1;H.push(JSON.stringify(L));hi++}
+function commit(label){const n=JSON.stringify(L);if(n===H[hi])return;H.length=hi+1;HM.length=hi+1;HM.push({t:Date.now(),label:label||diff(H[hi],n)});H.push(n);hi++}
 function undo(d){const n=hi+d;if(n<0||n>=H.length)return;hi=n;L=JSON.parse(H[hi]);sel=null;renderAll()}
 
 /* ---------- audio ---------- */
@@ -130,14 +132,21 @@ const endOf=l=>Math.max(0,...l.items.map(i=>i.start+D(i)));
 
 /* ---------- sync + draw ---------- */
 const fadeF=it=>{const d=D(it),t=T-it.start;return Math.max(0,Math.min(1,it.fi>0?t/it.fi:1,it.fo>0?(d-t)/it.fo:1))};
-function sync(force){const act=new Set();
+let clk=null,ld=0,starting=false;
+const setG=(a,v)=>{if(Math.abs((a.lg??-1)-v)>.002){a.lg=v;a.gain.gain.setTargetAtTime(v,ac.currentTime,.015)}};
+const actEls=()=>L.flatMap(l=>l.off||l.type=='text'?[]:l.items.filter(i=>!i.k&&A[i.asset]&&A[i.asset].type!='image'&&T>=i.start&&T<i.start+D(i)).map(i=>A[i.asset].el));
+function sync(force){const act=new Set();clk=null;
+ for(const l of L){if(l.off||l.type=='text')continue;for(const it of l.items)if(!it.k&&T>=it.start&&T<it.start+D(it))act.add(it.asset)}
  for(const l of L){if(l.off||l.type=='text')continue;
-  for(const it of l.items){if(it.k)continue;const a=A[it.asset];if(!a||a.type=='image')continue;
-   if(T>=it.start&&T<it.start+D(it)){act.add(a.id);const e=a.el,want=it.in+(T-it.start)*it.spd;e.playbackRate=it.spd;
-    if(force||Math.abs(e.currentTime-want)>.3)e.currentTime=want;
-    a.gain.gain.value=it.vol*(l.type=='audio'?1:1)*fadeF(it);
-    if(playing&&e.paused)e.play().catch(()=>{});if(!playing&&!e.paused)e.pause()}}}
- for(const a of Object.values(A))if(a.el&&a.type!='image'&&!act.has(a.id)){if(a.gain)a.gain.gain.value=0;if(!a.el.paused)a.el.pause()}}
+  for(const it of l.items){if(it.k)continue;const a=A[it.asset];if(!a||a.type=='image')continue;const e=a.el;
+   if(T>=it.start&&T<it.start+D(it)){const want=it.in+(T-it.start)*it.spd;
+    if(e.playbackRate!=it.spd)e.playbackRate=it.spd;
+    if(force||(!e.seeking&&Math.abs(e.currentTime-want)>.8))e.currentTime=want;
+    setG(a,it.vol*fadeF(it));
+    if(playing&&e.paused)e.play().catch(()=>{});if(!playing&&!e.paused)e.pause();
+    if(playing&&!e.paused&&!e.seeking&&e.readyState>=3&&!clk)clk={it,e}}
+   else if(playing&&!act.has(it.asset)&&it.start>T&&it.start-T<.9&&e.paused&&!e.seeking&&Math.abs(e.currentTime-it.in)>.05)e.currentTime=it.in}}
+ for(const a of Object.values(A))if(a.el&&a.type!='image'&&!act.has(a.id)){if(a.gain)setG(a,0);if(!a.el.paused)a.el.pause()}}
 function snapLook(W,H){const ov=(c,op,al)=>{cx.globalCompositeOperation=op;cx.globalAlpha=al;cx.fillStyle=c;cx.fillRect(0,0,W,H);cx.globalCompositeOperation='source-over';cx.globalAlpha=1};
  const k=P.look;if(k=='warm')ov('#ff9a3c','overlay',.35);if(k=='cool')ov('#3c9aff','overlay',.35);if(k=='bw')ov('#000','saturation',1);if(k=='fade'){ov('#fff','screen',.14);ov('#808080','saturation',.5)}
  if(k=='vivid'){cx.globalCompositeOperation='overlay';cx.globalAlpha=.4;cx.drawImage(cv,0,0);cx.globalCompositeOperation='source-over';cx.globalAlpha=1}
@@ -156,12 +165,14 @@ function draw(){const W=cv.width,Hh=cv.height;cx.globalCompositeOperation='sourc
 function loop(){requestAnimationFrame(loop);
  if(playing){T=(performance.now()-t0)/1000;
   if(T>=total()){playing=false;if(rec)finish();T=total();sync();setPl()}
-  else{for(const l of L)if(!l.off)for(const it of l.items)if(it.k&&it.start>lastT&&it.start<=T)sfxPlay(it.k,it.vol);sync()}}
- lastT=T;draw();if(pvOn)mirror();if(ph)ph.style.left=OFF+T*pps+'px';$('tm').textContent=fmt(T)+' / '+fmt(total());
+  else{for(const l of L)if(!l.off)for(const it of l.items)if(it.k&&it.start>lastT&&it.start<=T)sfxPlay(it.k,it.vol);sync();if(clk){const d=clk.it.start+(clk.e.currentTime-clk.it.in)/clk.it.spd-T;if(Math.abs(d)<.5)t0-=d*150}}}
+ lastT=T;const nw=performance.now();if(!rec||nw-ld>=33){draw();ld=nw}if(pvOn)mirror();if(ph)ph.style.left=OFF+T*pps+'px';$('tm').textContent=fmt(T)+' / '+fmt(total());
  if(playing){const tl=$('tl'),x=OFF+T*pps;if(x>tl.scrollLeft+tl.clientWidth-40||x<tl.scrollLeft)tl.scrollLeft=x-OFF-20}
  if(rec)$('prog').style.width=T/total()*100+'%'}
 loop();
-function play(){initAudio();if(T>=total()-.05)T=0;lastT=T;t0=performance.now()-T*1000;sync(true);playing=true;setPl()}
+async function play(){if(starting)return;starting=true;initAudio();if(T>=total()-.05)T=0;lastT=T;sync(true);
+ const t1=performance.now();while(performance.now()-t1<1500&&actEls().some(e=>e.seeking||e.readyState<3))await new Promise(r=>setTimeout(r,30));
+ t0=performance.now()-T*1000;playing=true;setPl();starting=false}
 function pause(){playing=false;sync();setPl()}
 $('pl').onclick=()=>playing?pause():play();
 function seekTo(e,t){if(e){const x=e.clientX-inner.getBoundingClientRect().left-OFF;t=x/pps;const sn=bounds().find(b=>Math.abs(b-t)<8/pps);if(sn!==undefined)t=sn}T=Math.min(Math.max(0,t),total());lastT=T;if(playing)t0=performance.now()-T*1000;sync(true)}
@@ -199,7 +210,7 @@ const FIELDS={video:[['Speed','spd',.25,4,.05],['Volume','vol',0,1,.05],['Opacit
 const sel_=(k,v,opts)=>`<label>${opts.n}<select data-k="${k}">${Object.entries(opts.o).map(([a,b])=>`<option value="${esc(a)}"${a==v?' selected':''}>${b}</option>`).join('')}</select></label>`;
 function renderPanel(){const p=$('pp'),s=getSel();let h='';
  if(pmode=='sfx'){h='<small>Tap a sound to hear it and add it at the playhead.</small><div class="rw" style="margin-top:6px">'+Object.entries(SFX).map(([k,n])=>`<button class="b" data-sfx="${k}">${n}</button>`).join('')+'</div>'}
- else if(pmode=='script'){h=scriptPanel()}else if(pmode=='lay'){h='<small>Add a layer:</small><div class="rw" style="margin-top:6px"><button class="b" data-nl="video">Video / photo layer</button><button class="b" data-nl="text">Text layer</button><button class="b" data-nl="audio">Audio layer</button></div>'}
+ else if(pmode=='hist'){h=histPanel()}else if(pmode=='script'){h=scriptPanel()}else if(pmode=='lay'){h='<small>Add a layer:</small><div class="rw" style="margin-top:6px"><button class="b" data-nl="video">Video / photo layer</button><button class="b" data-nl="text">Text layer</button><button class="b" data-nl="audio">Audio layer</button></div>'}
  else if(s){const[l,it]=s,ty=it.k?'sfx':typeOf(it);h='<div class="g">';
   if(ty=='text')h+=`<label style="grid-column:1/-1">Text<textarea rows="2" data-k="text" dir="auto">${esc(it.text)}</textarea></label><label>Color<input type="color" data-k="color" value="${it.color}"></label>`+sel_('font',it.font,{n:'Font',o:FONTS})+sel_('anim',it.anim,{n:'Animation',o:{none:'None',fade:'Fade',pop:'Pop in'}})+sel_('stroke',it.stroke,{n:'Outline',o:{on:'On',off:'Off'}})+sel_('bg',it.bg,{n:'Box',o:{none:'None',box:'Dark box'}});
   if(ty=='video')h+=sel_('fit',it.fit,{n:'Fit',o:{cover:'Fill (crop)',contain:'Fit (bars)'}});
@@ -228,6 +239,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
  if(a=='sfx'){initAudio();pmode='sfx';renderPanel()}
  if(a=='lay'){pmode='lay';renderPanel()}
  if(a=='script'){pmode='script';renderPanel()}
+ if(a=='hist'){pmode='hist';renderPanel()}
  if(a=='txt'){const l=pick('text',0),it={id:'i'+(uid++),text:'Your text',start:T,dur:3,size:72,color:'#ffffff',x:.5,y:.5,op:1,anim:'pop',stroke:'on',bg:'none',font:'Avenir Next, Arial, sans-serif'};l.items.push(it);sel=it.id;selL=l.id;pmode='props';commit();renderAll()}
  let s=getSel();
  if(a=='split'){if(!s){const l0=L.find(x=>x.id==selL),i0=l0&&l0.items.find(i=>T>i.start+.1&&T<i.start+D(i)-.1);if(i0)s=[l0,i0]}if(!s)return toast('Move the playhead over a clip to split it.');const[l,it]=s,t=T-it.start;if(t<.15||t>D(it)-.15)return toast('Move the playhead inside the clip to split.');
@@ -255,7 +267,7 @@ $('exp').onclick=async()=>{
  const st=cv.captureStream(30);recDest.stream.getAudioTracks().forEach(t=>st.addTrack(t));
  chunks=[];rec=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:P.q>1?10e6:6e6});rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
  rec.onstop=()=>{blob=new Blob(chunks,{type:mime.split(';')[0]});const u=URL.createObjectURL(blob);$('rv').src=u;$('dl').href=u;$('dl').download='reel.'+ext;$('res').style.display='flex';$('prog').style.width=0;rec=null;$('exp').textContent='Export';$('exp').disabled=false};
- $('exp').textContent='Recording…';$('exp').disabled=true;rec.start(250);play()};
+ $('exp').textContent='Recording…';$('exp').disabled=true;await play();rec.start(250)};
 function finish(){rec.stop();pause()}
 $('cl').onclick=()=>{$('res').style.display='none';$('rv').pause()};
 $('save').onclick=async()=>{const f=new File([blob],'reel.'+ext,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){}}else $('dl').click()};
@@ -294,6 +306,27 @@ $('pp').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!
  if(a=='tapn'&&tapS){tapS.st.push(T);tapS.i++;
   if(tapS.i>=tapS.segs.length){const st=tapS.st,sg=tapS.segs,r1=tapS.r1,en=st.map((x,k)=>k<st.length-1?st[k+1]:Math.min(x+Math.max(1.5,sg[k].split(/\s+/).length*.4),Math.max(r1,x+.8)));pause();tapS=null;putCaptions(sg,st,en)}else renderPanel()}
  if(a=='tapx'){tapS=null;pause();renderPanel()}});
+/* ---------- version history ---------- */
+const NAMES={start:'position',in:'trim',src:'trim',dur:'length',spd:'speed',vol:'volume',op:'opacity',sc:'scale',x:'position',y:'position',fi:'fade',fo:'fade',text:'text',size:'size',color:'color',font:'font',anim:'animation',stroke:'outline',bg:'box',fit:'fit',layer:'layer'};
+function diff(a,b){const f=z=>{const m={},ls={};JSON.parse(z).forEach(l=>{ls[l.id]=l.name+(l.off?'|off':'');l.items.forEach(i=>m[i.id]={i,ty:typeOf(i),l:l.id})});return[m,ls]};
+ const[X,LA]=f(a),[Y,LB]=f(b),add={},rem={},ch=new Set(),out=[],j=o=>Object.entries(o).map(([t,n])=>n+' '+t).join(', ');
+ for(const k in Y){if(!X[k])add[Y[k].ty]=(add[Y[k].ty]||0)+1;else{const x=X[k].i,y=Y[k].i;for(const q in y)if(JSON.stringify(x[q])!==JSON.stringify(y[q]))ch.add(NAMES[q]||q);if(X[k].l!=Y[k].l)ch.add('layer')}}
+ for(const k in X)if(!Y[k])rem[X[k].ty]=(rem[X[k].ty]||0)+1;
+ if(Object.keys(add).length)out.push('Added '+j(add));if(Object.keys(rem).length)out.push('Removed '+j(rem));if(ch.size)out.push('Changed '+[...ch].slice(0,4).join(', '));
+ const dl=Object.keys(LB).length-Object.keys(LA).length;if(dl)out.push((dl>0?'Added ':'Removed ')+Math.abs(dl)+' layer');
+ else for(const k in LB)if(LA[k]!==undefined&&LA[k]!==LB[k]){out.push('Layer shown or hidden');break}
+ return out.join('; ')||'No visible change'}
+const tfmt=t=>new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+function histPanel(){const cur=H[hi];
+ const vs=VER.length?VER.slice().reverse().map(v=>`<div class="hr"><div><b>${esc(v.name)}</b> <small>${tfmt(v.t)}</small><br><small>${esc(v.snap===cur?'Same as current':'Compared with now: '+diff(v.snap,cur))}</small></div><div class="rw"><button class="b" data-act="rs" data-id="${v.id}">Restore</button><button class="b ib" data-act="dv" data-id="${v.id}" aria-label="Delete version">${ic('del')}</button></div></div>`).join(''):'<small>No saved versions yet.</small>';
+ const ch=HM.map((m,i)=>`<div class="hr${i==hi?' on':''}" data-act="jp" data-i="${i}"><div>${esc(m.label)}<br><small>${tfmt(m.t)}${i==hi?' · current':''}</small></div></div>`).reverse().slice(0,40).join('');
+ return`<div class="rw"><input type="text" id="vn" placeholder="Name this version" style="flex:1"><button class="b pri" data-act="sv">Save version</button></div><b style="display:block;margin:10px 0 4px">Saved versions</b>${vs}<b style="display:block;margin:10px 0 4px">Recent changes <small>(tap one to go back to that point)</small></b>${ch}<small>App version ${APP_VERSION}. History lasts until you close this page.</small>`}
+$('pp').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,id=b.dataset.id;
+ if(a=='sv'){const k=vc++;VER.push({id:'v'+k,name:$('vn').value.trim()||'Version '+k,t:Date.now(),snap:H[hi]});renderPanel()}
+ if(a=='rs'){const v=VER.find(x=>x.id==id);if(v){L=JSON.parse(v.snap);sel=null;commit('Restored “'+v.name+'”');renderAll()}}
+ if(a=='dv'){VER=VER.filter(x=>x.id!=id);renderPanel()}
+ if(a=='jp'){hi=+b.dataset.i;L=JSON.parse(H[hi]);sel=null;renderAll()}});
+$('av').textContent='v'+APP_VERSION;
 document.querySelectorAll('[data-ic]').forEach(e=>e.innerHTML=ic(e.dataset.ic));setPl();
 renderAll();
 </script>
